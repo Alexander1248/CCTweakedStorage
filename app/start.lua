@@ -569,14 +569,16 @@ end)
 local networking = main:addThread()
 networking:start(function()
   while run do
-    local request = requests[1]
-    table.remove(requests, 1)
-    local response = Send(request, requestLock[request])
-    responses[request] = response
-    requestLock[request] = nil
-    updateLog()
+    if #requests > 0 then
+      local request = requests[1]
+      table.remove(requests, 1)
+      local response = Send(request, requestLock[request])
+      responses[request] = response
+      requestLock[request] = nil
+      updateLog()
+    end
     if responses["storage_list"] then
-      response = responses["storage_list"]
+      local response = responses["storage_list"]
       responses["storage_list"] = nil
       local database = { }
       local lines = split(response, "\n")
@@ -598,7 +600,7 @@ networking:start(function()
       updateStorageList()
     end
     if responses["input_list"] then
-      response = responses["input_list"]
+      local response = responses["input_list"]
       responses["input_list"] = nil
       local database = { }
       local lines = split(response, "\n")
@@ -620,7 +622,7 @@ networking:start(function()
       updateStorageList()
     end
     if responses["output_list"] then
-      response = responses["output_list"]
+      local response = responses["output_list"]
       responses["output_list"] = nil
       local outputs = { }
       local lines = split(response, "\n")
@@ -646,7 +648,7 @@ networking:start(function()
       updateStorageList()
     end
     if responses["item_list"] then
-      response = responses["item_list"]
+      local response = responses["item_list"]
       responses["item_list"] = nil
       local items = { }
       local lines = split(response, "\n")
@@ -672,7 +674,7 @@ networking:start(function()
       updateItemList(items)
     end
     if responses["alias_list"] then
-      response = responses["alias_list"]
+      local response = responses["alias_list"]
       responses["alias_list"] = nil
       local aliases = { }
       local lines = split(response, "\n")
@@ -698,7 +700,7 @@ networking:start(function()
       updateAliasList(aliases)
     end
     if responses["loader_list"] then
-      response = responses["loader_list"]
+      local response = responses["loader_list"]
       responses["loader_list"] = nil
       local loaders = { }
       local lines = split(response, "\n")
@@ -727,7 +729,7 @@ networking:start(function()
       updateTransferList()
     end
     if responses["unloader_list"] then
-      response = responses["unloader_list"]
+      local response = responses["unloader_list"]
       responses["unloader_list"] = nil
       local unloaders = { }
       local lines = split(response, "\n")
@@ -749,7 +751,7 @@ networking:start(function()
       updateTransferList()
     end
     if responses["property_list"] then
-      response = responses["property_list"]
+      local response = responses["property_list"]
       responses["property_list"] = nil
       local properties = { }
       local lines = split(response, "\n")
