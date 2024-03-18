@@ -112,6 +112,20 @@ end
 
 function Load()
     local pwd = fs.getDir(shell.getRunningProgram())
+    
+    Properties["AutoUpdate"] = "true"
+    Properties["Tick"] = "1"
+    Properties["Log.Info"] = "true"
+    Properties["Log.Warnings"] = "true"
+    Properties["Log.Debug"] = "false"
+
+    Properties["Server.Requests"] = "false"
+    Properties["Server.Address"] = ""
+    
+    Properties["Rednet.Side"] = "left"
+    Properties["Rednet.Host"] = "storage"
+    Properties["Rednet.Response"] = "true"
+    Properties["Rednet.Timeout"] = "3"
     if fs.exists(pwd .. "/config.properties") then
         local file = fs.open(pwd .. "/config.properties", "r")
         while true do
@@ -126,19 +140,6 @@ function Load()
         end
         file.close()
     else
-        Properties["Tick"] = "1"
-        Properties["Log.Info"] = "true"
-        Properties["Log.Warnings"] = "true"
-        Properties["Log.Debug"] = "false"
-
-        Properties["Server.Requests"] = "false"
-        Properties["Server.Address"] = ""
-        
-        Properties["Rednet.Side"] = "left"
-        Properties["Rednet.Host"] = "storage"
-        Properties["Rednet.Response"] = "true"
-        Properties["Rednet.Timeout"] = "3"
-
         SaveProperties()
     end
 

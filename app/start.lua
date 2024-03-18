@@ -1,4 +1,5 @@
 local basalt = require("basalt")
+local sha = require("sha2")
 require("network")
 local split
 split = function(pString, pPattern)
@@ -34,6 +35,48 @@ local theme = {
   FrameFG = colors.black
 }
 local main = basalt.createFrame():setTheme(theme)
+local closeAfterUpdate = false
+if not http then
+  logWarning("HTTP API disabled!")
+else
+  local response = http.get("https://gist.githubusercontent.com/Alexander1248/9cbed5f35877c8ad70982aa3888bcd66/raw")
+  local code, message = response.getResponseCode()
+  if code ~= 200 then
+    logWarning("Update Error! " .. message)
+  else
+    local data = response.readAll()
+    local downloadHash = sha.sha256(data)
+    local program = fs.open(shell.getRunningProgram(), "r")
+    local currentHash = sha.sha256(program.readAll())
+    program.close()
+    if downloadHash ~= currentHash then
+      if Properties["AutoUpdate"] == "true" then
+        program = fs.open(shell.getRunningProgram(), "w")
+        program.write(data)
+        program.close()
+        shell.execute(shell.getRunningProgram())
+        return 
+      else
+        local update = main:addFrame()
+        update:setPosition(1, "parent.h")
+        update:setSize("parent.w", 1)
+        update:setZIndex(100)
+        update:setBackground(colors.yellow)
+        update:addLabel():setPosition(1, 1):setSize("parent.w * 0.7 - 1", 1):setText("Exists new version!")
+        update:addButton():setPosition("parent.w * 0.7", 1):setSize("parent.w * 0.3 - 1", 1):setText("Update"):setBackground(colors.green):setForeground(colors.black):onClick(function()
+          program = fs.open(shell.getRunningProgram(), "w")
+          program.write(data)
+          program.close()
+          shell.execute(shell.getRunningProgram())
+          return basalt.stop()
+        end)
+        update:addButton():setSize(1, 1):setText("X"):setBackground(update:getBackground()):setForeground(colors.red):setPosition("parent.w", 1):onClick(function()
+          return update:remove()
+        end)
+      end
+    end
+  end
+end
 local data = { }
 local run = true
 local windows = {
@@ -84,14 +127,14 @@ updateItemList = function(items)
   itemList:removeChildren()
   for i, v in ipairs(items) do
     local item = itemList:addFrame()
-    item:setSize("parent.w - 2", 4)
+    item:setSize("parent.w - 2", 3)
     item:setPosition(2, i * 4 - 2)
     item:setBackground(colors.lightGray)
-    item:addLabel():setPosition(1, 1):setSize("parent.w * 0.4", 3):setText(v[1])
+    item:addLabel():setPosition(1, 1):setSize("parent.w * 0.4 - 1", 3):setText(v[1])
     item:addLabel():setPosition("1 + parent.w * 0.4", 1):setSize("parent.w * 0.4 - 2", 3):setText(tostring(v[2]))
     item:addButton():setPosition("1 + parent.w * 0.8", 1):setSize("parent.w * 0.1", 3):setText("+"):setBackground(colors.green):setForeground(colors.black):onClick(function(self, event, button, x, y)
       if event == "mouse_click" and button == 1 then
-        local frame = windows[2]:addMovableFrame()
+        local frame = windows[1]:addMovableFrame()
         frame:setPosition("parent.w * 0.2", "parent.h * 0.3")
         frame:setSize("parent.w * 0.6", "parent.w * 0.3")
         frame:addLabel():setSize("parent.w", 1):setBackground(colors.black):setForeground(colors.lightGray):setText("Add item")
@@ -115,17 +158,17 @@ updateItemList = function(items)
         end)
       end
     end)
-    item:addButton():setPosition("1 + parent.w * 0.9", 3):setSize("parent.w * 0.1", 1):setText("-"):setBackground(colors.red):setForeground(colors.black):onClick(function(self, event, button, x, y)
+    item:addButton():setPosition("1 + parent.w * 0.9", 1):setSize("parent.w * 0.1", 3):setText("-"):setBackground(colors.red):setForeground(colors.black):onClick(function(self, event, button, x, y)
       if event == "mouse_click" and button == 1 then
-        local frame = windows[2]:addMovableFrame()
+        local frame = windows[1]:addMovableFrame()
         frame:setPosition("parent.w * 0.2", "parent.h * 0.3")
         frame:setSize("parent.w * 0.6", "parent.w * 0.3")
         frame:addLabel():setSize("parent.w", 1):setBackground(colors.black):setForeground(colors.lightGray):setText("Add item")
         frame:addButton():setSize(1, 1):setText("X"):setBackground(colors.black):setForeground(colors.red):setPosition("parent.w - 1", 1):onClick(function()
           return frame:remove()
         end)
-        frame:addLabel():setPosition(1, "parent.h * 0.25"):setSize("parent.w * 0.3", 1):setText("Count"):setInputType("number")
-        local countInput = frame:addInput():setPosition("parent.w * 0.3", "parent.h * 0.25"):setSize("parent.w * 0.7", 1)
+        frame:addLabel():setPosition(1, "parent.h * 0.25"):setSize("parent.w * 0.3", 1):setText("Count")
+        local countInput = frame:addInput():setPosition("parent.w * 0.3", "parent.h * 0.25"):setSize("parent.w * 0.7", 1):setInputType("number")
         frame:addLabel():setPosition(1, "parent.h * 0.5"):setSize("parent.w * 0.3", 1):setText("Terminal")
         local terminal = frame:addInput():setPosition("parent.w * 0.3", "parent.h * 0.5"):setSize("parent.w * 0.7", 1)
         local execute = frame:addButton():setPosition("parent.w * 0.3", "parent.h * 0.75"):setSize("parent.w * 0.4", 3):setText("Execute")
@@ -541,8 +584,8 @@ settingsListSelector:onChange(function(self, item)
 end)
 local logFrame = main:addMovableFrame()
 logFrame:hide()
-logFrame:setPosition("parent.w * 0.1", "parent.h * 0.2")
-logFrame:setSize("parent.w * 0.8", "parent.w * 0.5")
+logFrame:setPosition("parent.w * 0.1", "parent.h * 0.1")
+logFrame:setSize("parent.w * 0.8", "parent.h * 0.8")
 logFrame:addLabel():setSize("parent.w", 1):setBackground(colors.black):setForeground(colors.lightGray):setText("Log")
 logFrame:addButton():setSize(1, 1):setText("X"):setBackground(colors.black):setForeground(colors.red):setPosition("parent.w - 1", 1):onClick(function()
   return logFrame:hide()

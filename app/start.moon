@@ -1,6 +1,7 @@
 basalt = require "basalt"
+sha = require "sha2"
 require "network"
-
+    
 
 split = (pString, pPattern) ->
     Table = {}  
@@ -25,12 +26,56 @@ word_dst = (request, word) ->
 
     return count
 
+
+
+
 theme = {
     FrameBG: colors.lightGray,
     FrameFG: colors.black
 }
 
 main = basalt.createFrame()\setTheme(theme)
+
+closeAfterUpdate = false
+if not http
+    logWarning "HTTP API disabled!"
+else
+    response = http.get("https://gist.githubusercontent.com/Alexander1248/9cbed5f35877c8ad70982aa3888bcd66/raw")
+    code, message = response.getResponseCode()
+    if code ~= 200
+        logWarning "Update Error! " .. message
+    else
+        data = response.readAll!
+        downloadHash = sha.sha256 data
+
+        program = fs.open shell.getRunningProgram(), "r"
+        currentHash = sha.sha256 program.readAll!
+        program.close!
+        if downloadHash ~= currentHash 
+            if Properties["AutoUpdate"] == "true"
+                program = fs.open shell.getRunningProgram(), "w"
+                program.write data
+                program.close!
+
+                shell.execute shell.getRunningProgram!
+                return
+            else
+                update = main\addFrame!
+                update\setPosition 1, "parent.h"
+                update\setSize "parent.w", 1
+                update\setZIndex 100
+                update\setBackground colors.yellow
+                update\addLabel!\setPosition(1, 1)\setSize("parent.w * 0.7 - 1", 1)\setText("Exists new version!")
+                update\addButton!\setPosition("parent.w * 0.7", 1)\setSize("parent.w * 0.3 - 1", 1)\setText("Update")\setBackground(colors.green)\setForeground(colors.black)\onClick(() -> 
+                    program = fs.open shell.getRunningProgram!, "w"
+                    program.write data
+                    program.close!
+
+                    shell.execute shell.getRunningProgram!
+                    basalt.stop!
+                )
+                update\addButton!\setSize(1, 1)\setText("X")\setBackground(update\getBackground!)\setForeground(colors.red)\setPosition("parent.w", 1)\onClick(() -> update\remove!)
+
 
 data = {}
 run = true
@@ -78,15 +123,15 @@ updateItemList = (items) ->
     itemList\removeChildren!
     for i, v in ipairs items
         item = itemList\addFrame!
-        item\setSize "parent.w - 2", 4
+        item\setSize "parent.w - 2", 3
         item\setPosition 2, i * 4 - 2
         item\setBackground colors.lightGray
-        item\addLabel!\setPosition(1, 1)\setSize("parent.w * 0.4", 3)\setText(v[1])
+        item\addLabel!\setPosition(1, 1)\setSize("parent.w * 0.4 - 1", 3)\setText(v[1])
         item\addLabel!\setPosition("1 + parent.w * 0.4", 1)\setSize("parent.w * 0.4 - 2", 3)\setText(tostring(v[2]))
         item\addButton!\setPosition("1 + parent.w * 0.8", 1)\setSize("parent.w * 0.1", 3)\setText("+")\setBackground(colors.green)\setForeground(colors.black)\onClick(
             (event, button, x, y) =>
             if event=="mouse_click" and button==1
-                frame = windows[2]\addMovableFrame!
+                frame = windows[1]\addMovableFrame!
                 frame\setPosition "parent.w * 0.2", "parent.h * 0.3"
                 frame\setSize("parent.w * 0.6", "parent.w * 0.3")
                 frame\addLabel!\setSize("parent.w", 1)\setBackground(colors.black)\setForeground(colors.lightGray)\setText("Add item")
@@ -106,17 +151,17 @@ updateItemList = (items) ->
                         frame\remove()
             
         )
-        item\addButton!\setPosition("1 + parent.w * 0.9", 3)\setSize("parent.w * 0.1", 1)\setText("-")\setBackground(colors.red)\setForeground(colors.black)\onClick(
+        item\addButton!\setPosition("1 + parent.w * 0.9", 1)\setSize("parent.w * 0.1", 3)\setText("-")\setBackground(colors.red)\setForeground(colors.black)\onClick(
             (event, button, x, y) =>
             if event=="mouse_click" and button==1
-                frame = windows[2]\addMovableFrame!
+                frame = windows[1]\addMovableFrame!
                 frame\setPosition "parent.w * 0.2", "parent.h * 0.3"
                 frame\setSize("parent.w * 0.6", "parent.w * 0.3")
                 frame\addLabel!\setSize("parent.w", 1)\setBackground(colors.black)\setForeground(colors.lightGray)\setText("Add item")
                 frame\addButton!\setSize(1, 1)\setText("X")\setBackground(colors.black)\setForeground(colors.red)\setPosition("parent.w - 1", 1)\onClick(() -> frame\remove())
                 
-                frame\addLabel!\setPosition(1, "parent.h * 0.25")\setSize("parent.w * 0.3", 1)\setText("Count")\setInputType("number")
-                countInput = frame\addInput!\setPosition("parent.w * 0.3", "parent.h * 0.25")\setSize("parent.w * 0.7", 1)
+                frame\addLabel!\setPosition(1, "parent.h * 0.25")\setSize("parent.w * 0.3", 1)\setText("Count")
+                countInput = frame\addInput!\setPosition("parent.w * 0.3", "parent.h * 0.25")\setSize("parent.w * 0.7", 1)\setInputType("number")
 
                 frame\addLabel!\setPosition(1, "parent.h * 0.5")\setSize("parent.w * 0.3", 1)\setText("Terminal")
                 terminal = frame\addInput!\setPosition("parent.w * 0.3", "parent.h * 0.5")\setSize("parent.w * 0.7", 1)
@@ -517,8 +562,8 @@ settingsListSelector\onChange (item) =>
 
 logFrame = main\addMovableFrame!
 logFrame\hide!
-logFrame\setPosition "parent.w * 0.1", "parent.h * 0.2"
-logFrame\setSize("parent.w * 0.8", "parent.w * 0.5")
+logFrame\setPosition "parent.w * 0.1", "parent.h * 0.1"
+logFrame\setSize("parent.w * 0.8", "parent.h * 0.8")
 logFrame\addLabel!\setSize("parent.w", 1)\setBackground(colors.black)\setForeground(colors.lightGray)\setText("Log")
 logFrame\addButton!\setSize(1, 1)\setText("X")\setBackground(colors.black)\setForeground(colors.red)\setPosition("parent.w - 1", 1)\onClick(() -> logFrame\hide!)
 logField = logFrame\addTextfield!

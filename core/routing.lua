@@ -1,5 +1,3 @@
-assert(require("core/database"))
-
 local function findItemSlotsInStorage(name)
     local slots = {}
 
@@ -115,10 +113,10 @@ function AddItem(name, count)
 
         local ioChest = peripheral.wrap(slots[1][1]);
         local items = ioChest.list();
-        local size = items[slots[1]]["count"]
+        local size = items[slots[1][2]]["count"]
         for i = 1, #Storages do 
         
-            local placementSize = ioChest.pushItems(Storages[i], slots[1], math.min(used, size))
+            local placementSize = ioChest.pushItems(Storages[i], slots[1][2], math.min(used, size))
             used = used - placementSize
             size = size - placementSize
 
@@ -129,8 +127,8 @@ function AddItem(name, count)
                 if #slots > 0 then 
                     ioChest = peripheral.wrap(slots[1][1]);
                     items = ioChest.list();
-                    size = items[slots[1]]["count"]
-                    placementSize = ioChest.pushItems(Storages[i], slots[1], math.min(used, size))
+                    size = items[slots[1][2]]["count"]
+                    placementSize = ioChest.pushItems(Storages[i], slots[1][2], math.min(used, size))
                     used = used - placementSize
                     size = size - placementSize
                 end

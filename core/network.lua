@@ -1,6 +1,3 @@
-assert(require("core/database"))
-
-
 local connected = true
 
 function ServerUpdate()

@@ -17,19 +17,19 @@ local function split(pString, pPattern)
     return Table
 end
 
-function logWarning(msg)
+logWarning = function(msg)
     if msg == "" then
          return
     end
    table.insert(Lines, "[Warning]: " .. msg)
 end
-function logInfo(msg)
+logInfo = function(msg)
     if msg == "" then
          return
     end
     table.insert(Lines, "[Info]: " .. msg)
 end
-function logError(msg)
+logError = function(msg)
     if msg == "" then
          return
     end
@@ -39,6 +39,15 @@ end
 Properties = {}
 Lines = {}
 
+Properties["AutoUpdate"] = "true"
+Properties["Log.Info"] = "true"
+Properties["Log.Warnings"] = "true"
+
+Properties["Rednet.Side"] = "left"
+Properties["Rednet.Host"] = "storage"
+Properties["Rednet.AcceptTimeout"] = "10"
+Properties["Rednet.RecieveTimeout"] = "10"
+Properties["Rednet.MaxRecieveAttempts"] = "10"
 local pwd = fs.getDir(shell.getRunningProgram())
 if fs.exists(pwd .. "/config.properties") then
     local file = fs.open(pwd .. "/config.properties", "r")
@@ -54,15 +63,6 @@ if fs.exists(pwd .. "/config.properties") then
     end
     file.close()
 else
-    Properties["Log.Info"] = "true"
-    Properties["Log.Warnings"] = "true"
-    
-    Properties["Rednet.Side"] = "left"
-    Properties["Rednet.Host"] = "storage"
-    Properties["Rednet.AcceptTimeout"] = "10"
-    Properties["Rednet.RecieveTimeout"] = "10"
-    Properties["Rednet.MaxRecieveAttempts"] = "10"
-
     local file = fs.open(pwd .. "/config.properties", "w")
     for key, value in pairs(Properties) do
         file.writeLine(key .. ": " .. value)
@@ -72,7 +72,7 @@ else
 end
 
 
-function Send(msg, waitResponse)
+Send = function(msg, waitResponse)
     at = tonumber(Properties["Rednet.AcceptTimeout"])
     if not at then
         at = 10
@@ -135,7 +135,7 @@ function Send(msg, waitResponse)
     return nil
 end
 
-function Verify(rightId, senderId, protocol)
+Verify = function(rightId, senderId, protocol)
     if protocol ~= "storage_response" then
         if Properties["Log.Warnings"] then
             logWarning("Wrong protocol! " .. tostring(protocol))

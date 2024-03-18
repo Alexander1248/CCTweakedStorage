@@ -1,6 +1,7 @@
-assert(require("core/routing"))
-assert(require("core/network"))
-assert(require("core/database"))
+require("core/routing")
+require("core/network")
+require("core/database")
+sha = require("core/sha2")
 
 
 
@@ -409,6 +410,48 @@ end
 
 
 Load()
+
+if not http then
+    warning("HTTP API disabled!")
+  else
+    local response = http.get("https://gist.githubusercontent.com/Alexander1248/ef3cbe7b72aaafb1ecb7f66b70617eff/raw")
+    local code, message = response.getResponseCode()
+    if code ~= 200 then
+        warning("Update Error! " .. message)
+    else
+        local data = response.readAll()
+        local downloadHash = sha.sha256(data)
+        local program = fs.open(shell.getRunningProgram(), "r")
+        local currentHash = sha.sha256(program.readAll())
+        program.close()
+        if downloadHash ~= currentHash then
+            if Properties["AutoUpdate"] == "true" then
+                print("New version released! Updating...")
+                program = fs.open(shell.getRunningProgram(), "w")
+                program.write(data)
+                program.close()
+                print("Updated!")
+                shell.execute(shell.getRunningProgram())
+                return 
+            else
+                print("New version released! Update?(y/n)")
+                r = read():lower()
+                if r =="y" or r =="yes" then
+                    print("Updating...")
+                    program = fs.open(shell.getRunningProgram(), "w")
+                    program.write(data)
+                    program.close()
+                    print("Updated!")
+                    shell.execute(shell.getRunningProgram())
+                    return 
+                else
+                    print("Update refused!")
+                end
+            end
+        end
+    end
+end
+
 RednetStart()
 
 while run do
